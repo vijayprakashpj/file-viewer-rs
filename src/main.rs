@@ -4,7 +4,7 @@ use ratatui::{
         event::{Event, KeyCode, KeyEventKind},
     },
     layout::{Alignment, Constraint, Layout},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
 };
 
 struct FileViewerState {
@@ -55,8 +55,8 @@ impl FileViewerState {
             .map_or(&self.file_path, |(_, name)| name)
     }
 
-    fn get_scroll_offset(&self) -> u16 {
-        self.scroll_offset as u16
+    fn get_scroll_offset(&self) -> usize {
+        self.scroll_offset
     }
 }
 
@@ -96,8 +96,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let (content, line_count) = state.get_file_content();
             let content = Paragraph::new(content)
                 .block(Block::default().borders(Borders::ALL))
-                .scroll((state.get_scroll_offset(), 0));
+                .scroll((state.get_scroll_offset() as u16, 0));
             frame.render_widget(content, chunks[1]);
+            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
+            let mut scrollbar_state =
+                ScrollbarState::new(line_count).position(state.get_scroll_offset() as usize);
+            frame.render_stateful_widget(scrollbar, chunks[1], &mut scrollbar_state);
 
             let footer_layout = Layout::default()
                 .direction(ratatui::layout::Direction::Horizontal)
